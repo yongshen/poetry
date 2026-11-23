@@ -1,6 +1,9 @@
 /* ============================================================
    诗泉 API 客户端（7 接口 + lang 全局参数）
-   含内存缓存、超时、以及 CORS/网络失败时的代理回退。
+   请求策略（三级回退，自动适配不同部署环境）：
+     1) 同源 /api  —— server.mjs 本地代理 或 Vercel rewrite 代理（无跨域）
+     2) 直连官网   —— https://poetry.palemoky.com（需官网允许跨域）
+     3) CORS 代理   —— allorigins.win（兜底）
    ============================================================ */
 window.API = (function () {
   'use strict';
@@ -52,14 +55,22 @@ window.API = (function () {
     });
   }
 
-  // 直连失败后走 CORS 代理回退
+  function networkError(e2) {
+    var err = new Error('NETWORK');
+    err.cause = e2;
+    return err;
+  }
+
+  // path 形如 "/api/xxx" 或 "/health"
   function request(path) {
-    var full = BASE + path;
-    return fetchJson(full).catch(function () {
-      return fetchJson(PROXY + encodeURIComponent(full)).catch(function (e2) {
-        var err = new Error('NETWORK');
-        err.cause = e2;
-        throw err;
+    // 1) 同源代理（本地 server.mjs / Vercel rewrite）
+    return fetchJson(path).catch(function () {
+      // 2) 直连官网
+      return fetchJson(BASE + path).catch(function () {
+        // 3) 公共 CORS 代理兜底
+        return fetchJson(PROXY + encodeURIComponent(BASE + path)).catch(function (e2) {
+          throw networkError(e2);
+        });
       });
     });
   }
@@ -128,13 +139,11 @@ window.API = (function () {
     // 服务健康检查（含响应耗时）
     health: function () {
       var t0 = Date.now();
-      return fetchJson(BASE + '/health').then(function (data) {
-        return { ok: !!(data && data.ok), ms: Date.now() - t0, data: data };
-      }).catch(function () {
-        return fetchJson(PROXY + encodeURIComponent(BASE + '/health')).then(function (data) {
-          return { ok: !!(data && data.ok), ms: Date.now() - t0, data: data };
-        }).catch(function () {
-          return { ok: false, ms: Date.now() - t0, data: null };
+      function ok(data) { return { ok: !!(data && data.ok), ms: Date.now() - t0, data: data }; }
+      function fail() { return { ok: false, ms: Date.now() - t0, data: null }; }
+      return fetchJson('/health').then(ok).catch(function () {
+        return fetchJson(BASE + '/health').then(ok).catch(function () {
+          return fetchJson(PROXY + encodeURIComponent(BASE + '/health')).then(ok).catch(fail);
         });
       });
     },
