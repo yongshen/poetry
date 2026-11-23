@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#F7F3EA">
+<title>诗泉 · 背诗</title>
+<meta name="description" content="基于诗泉 API 的古诗词背诵默写练习应用">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon.svg">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="app" class="app">
+
+  <!-- 状态栏（模拟） -->
+  <div class="statusbar">
+    <span class="sb-time" id="sbTime">9:41</span>
+    <span class="sb-r"><span class="sb-brand">诗泉</span><span class="sb-ico"></span></span>
+  </div>
+
+  <!-- 离线提示条 -->
+  <div class="offline-bar" id="offlineBar" hidden>
+    <span>离线模式 · 仅可读本地收藏与错句本</span>
+  </div>
+
+  <!-- 主视图 -->
+  <main class="view" id="view">
+
+    <!-- ===== TAB 1 首页 ===== -->
+    <section class="tab-panel is-active" data-tab="home">
+      <div class="home-top">
+        <div class="date-zh" id="homeDate">
+          <b id="homeDateB"></b><span id="homeDateS"></span>
+        </div>
+        <div class="lang-sw" id="langSw">
+          <button class="on" data-lang="zh-Hans">简体</button>
+          <button data-lang="zh-Hant">繁體</button>
+        </div>
+      </div>
+
+      <div class="hero-poem">
+        <span class="hero-corner">今日一詩</span>
+        <div class="poem-card" id="homePoemCard">
+          <div class="sk sk-w"></div>
+          <div class="sk sk-m"></div>
+          <div class="sk"></div>
+          <div class="sk sk-m"></div>
+        </div>
+      </div>
+
+      <div class="btn-row pad-x" id="homeActions" hidden>
+        <button class="u-btn cinnabar" data-action="start-memorize">开始背诵</button>
+        <button class="u-btn ghost" data-action="favorite">收藏</button>
+        <button class="u-btn ghost" data-action="another">换一首</button>
+      </div>
+
+      <div class="task-strip pad-x" id="homeTask">
+        <div class="ts-h"><b>今日任务</b><span id="homeTaskNum">0 / 0 首</span></div>
+        <div class="progress"><i id="homeTaskBar" style="width:0%"></i></div>
+        <p class="ts-sub" id="homeTaskSub">完成一组练习即可打卡</p>
+      </div>
+
+      <div class="quick-grid pad-x">
+        <button class="qg-item" data-action="go-practice"><span class="qi" style="background:var(--cinnabar)">填</span><span>挖空默写</span></button>
+        <button class="qg-item" data-action="go-review"><span class="qi" style="background:var(--indigo)">复</span><span>待复习</span></button>
+        <button class="qg-item" data-action="go-wrong"><span class="qi" style="background:var(--gold)">错</span><span>错句本</span></button>
+        <button class="qg-item" data-action="go-me"><span class="qi" style="background:var(--jade)">我</span><span>我的</span></button>
+      </div>
+
+      <div class="pad-x">
+        <div class="sect-label">待複習 <span class="sl-more" data-action="go-review">查看全部 ›</span></div>
+        <div id="homeReviewList"><p class="empty-mini">暂无待复习内容</p></div>
+      </div>
+      <div class="pad-b"></div>
+    </section>
+
+    <!-- ===== TAB 2 练习 ===== -->
+    <section class="tab-panel" data-tab="practice">
+      <div class="navbar"><h2>練習</h2><span class="nav-ico" id="practiceIco"></span></div>
+      <div class="pad-x">
+        <div class="mode-card">
+          <span class="mc-badge">推薦</span>
+          <div class="mc-top">
+            <span class="mc-ico" style="background:var(--cinnabar)">填</span>
+            <span class="mc-body"><b>挖空默寫</b><p>遮蔽关键字，从候选字中选字填空，适合初背</p></span>
+          </div>
+          <div class="mc-foot"><span class="u-chip red">每句挖 1–3 字</span><span class="u-chip">即时判定</span></div>
+        </div>
+
+        <div class="mode-card is-disabled">
+          <div class="mc-top">
+            <span class="mc-ico" style="background:var(--indigo)">接</span>
+            <span class="mc-body"><b>上下句接龍</b><p>给上句选下句，训练连贯记忆</p></span>
+          </div>
+          <div class="mc-foot"><span class="u-chip">四选一</span><span class="u-chip">敬请期待</span></div>
+        </div>
+
+        <div class="mode-card is-disabled">
+          <div class="mc-top">
+            <span class="mc-ico" style="background:var(--gold)">序</span>
+            <span class="mc-body"><b>亂序重排</b><p>打乱全部句子，点击按原序排列</p></span>
+          </div>
+          <div class="mc-foot"><span class="u-chip">整首级</span><span class="u-chip">敬请期待</span></div>
+        </div>
+
+        <div class="mode-card is-disabled">
+          <div class="mc-top">
+            <span class="mc-ico" style="background:var(--jade)">花</span>
+            <span class="mc-body"><b>飛花令</b><p>选一个字，限时找出含该字的诗句</p></span>
+          </div>
+          <div class="mc-foot"><span class="u-chip">计时 60s</span><span class="u-chip">敬请期待</span></div>
+        </div>
+      </div>
+
+      <div class="pad-x">
+        <div class="sect-label">難度</div>
+        <div class="diff" id="diffSel">
+          <button data-diff="enlighten">啟蒙</button>
+          <button data-diff="standard" class="on">標準</button>
+          <button data-diff="challenge">挑戰</button>
+        </div>
+      </div>
+
+      <div class="pad-x">
+        <div class="sect-label">練習量</div>
+        <div class="diff" id="countSel">
+          <button data-count="3">3 首</button>
+          <button data-count="5" class="on">5 首</button>
+          <button data-count="10">10 首</button>
+        </div>
+      </div>
+
+      <div class="pad-x pad-b" style="margin-top:16px">
+        <button class="u-btn primary w100" data-action="start-session">開始今日練習</button>
+        <button class="u-btn ghost w100" style="margin-top:10px" data-action="start-wrong-only">只練錯句（<span id="wrongOnlyCount">0</span>）</button>
+      </div>
+    </section>
+
+    <!-- ===== TAB 3 收藏 ===== -->
+    <section class="tab-panel" data-tab="collect">
+      <div class="navbar"><h2>收藏</h2><span class="nav-ico" id="collectIco"></span></div>
+      <div class="collect-tabs" id="collectTabs">
+        <button class="on" data-ctab="review">待複習 <span class="badge" id="badgeReview">0</span></button>
+        <button data-ctab="favorite">已收藏 <span class="badge" id="badgeFav">0</span></button>
+        <button data-ctab="wrong">錯句本 <span class="badge" id="badgeWrong">0</span></button>
+      </div>
+      <div class="pad-x pad-b" id="collectList"></div>
+    </section>
+
+    <!-- ===== TAB 4 我的 ===== -->
+    <section class="tab-panel" data-tab="me">
+      <div class="me-head">
+        <div class="me-row">
+          <span class="avatar">讀</span>
+          <span class="me-id"><b>讀書人</b><span id="meDays">已陪伴 0 天</span></span>
+        </div>
+        <div class="me-stat">
+          <div><b id="meStreak">0</b><span>連續天</span></div>
+          <div><b id="meLearned">0</b><span>已背首</span></div>
+          <div><b id="meRate">--</b><span>正確率</span></div>
+          <div><b id="meCount">0</b><span>練題數</span></div>
+        </div>
+      </div>
+
+      <div class="pad-x">
+        <div class="sect-label">打卡日曆</div>
+        <div class="heat" id="heatmap"></div>
+        <p class="heat-note" id="heatNote">本月打卡 0 天</p>
+      </div>
+
+      <div class="pad-x">
+        <div class="sect-label">設定</div>
+        <div class="set-group">
+          <div class="set-row"><span class="sr-i" style="background:var(--cinnabar)">文</span><b>繁體模式</b><span class="toggle on" id="toggleLang"></span></div>
+          <div class="set-row" data-action="set-daily"><span class="sr-i" style="background:var(--indigo)">習</span><b>每日練習量</b><span class="sr-v" id="setDaily">5 首 ›</span></div>
+          <div class="set-row" data-action="reset-data"><span class="sr-i" style="background:var(--err)">清</span><b>清空本地資料</b><span class="sr-v">›</span></div>
+        </div>
+      </div>
+
+      <div class="pad-x">
+        <div class="set-group">
+          <div class="set-row"><span class="sr-i" style="background:var(--ok)">服</span><b>詩泉 API 狀態</b><span class="api-ok" id="apiStatus"><i></i>檢測中…</span></div>
+          <div class="set-row"><span class="sr-i" style="background:var(--ink-faint)">庫</span><b>全庫規模</b><span class="sr-v" id="apiScale">--</span></div>
+          <div class="set-row" data-action="export"><span class="sr-i" style="background:var(--gold)">存</span><b>導出學習記錄</b><span class="sr-v">›</span></div>
+        </div>
+      </div>
+      <div class="pad-b"></div>
+    </section>
+
+  </main>
+
+  <!-- ===== 全屏页：答题 ===== -->
+  <div class="page" id="page-exercise" hidden>
+    <div class="ex-top">
+      <button class="xt-close" data-action="quit-exercise">✕</button>
+      <div class="progress"><i id="exProgress" style="width:0%"></i></div>
+      <span class="xt-n" id="exNum">1 / 5</span>
+    </div>
+    <div class="streak" id="exStreak"></div>
+    <div class="ex-scroll">
+      <div class="ex-head" id="exHead"></div>
+      <div class="blank-wrap" id="exBlank"></div>
+      <div class="sect-label pad-x" style="margin-top:8px">候選字</div>
+      <div class="opt-pad" id="exCandidates"></div>
+      <p class="kbd-hint" id="exHint"></p>
+      <div class="fb-bar" id="exFeedback" hidden></div>
+    </div>
+    <div class="ex-footer">
+      <button class="u-btn primary w100" id="exSubmit">提交答案</button>
+    </div>
+  </div>
+
+  <!-- ===== 全屏页：结果 ===== -->
+  <div class="page" id="page-result" hidden>
+    <div class="ex-scroll">
+      <div class="res-top">今日練習完成</div>
+      <div class="ring-wrap" id="resRing"></div>
+      <div class="res-quad" id="resQuad"></div>
+      <div class="miss-list pad-x" id="resMiss"></div>
+      <div class="pad-x pad-b" style="margin-top:16px">
+        <div class="btn-row">
+          <button class="u-btn ghost" data-action="wrong-only">只練錯句</button>
+          <button class="u-btn cinnabar" data-action="again">再來一組</button>
+        </div>
+        <button class="u-btn ghost w100" style="margin-top:10px" data-action="back-home">回到首頁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 全屏页：诗词详情 ===== -->
+  <div class="page" id="page-detail" hidden>
+    <div class="navbar">
+      <button class="nav-ico" data-action="close-detail">←</button>
+      <h2>詩詞詳情</h2>
+      <button class="nav-ico" data-action="detail-favorite">♡</button>
+    </div>
+    <div class="ex-scroll">
+      <div id="detailBody"></div>
+    </div>
+    <div class="det-actions">
+      <button class="u-btn cinnabar" data-action="detail-memorize">背這首</button>
+      <button class="u-btn ghost" data-action="detail-favorite2">收藏</button>
+    </div>
+  </div>
+
+  <!-- ===== 底部导航 ===== -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tab on" data-tab="home"><span class="ico">詩</span>首頁</button>
+    <button class="tab" data-tab="practice"><span class="ico">練</span>練習</button>
+    <button class="tab" data-tab="collect"><span class="ico">藏</span>收藏</button>
+    <button class="tab" data-tab="me"><span class="ico">我</span>我的</button>
+  </nav>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/practice.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
