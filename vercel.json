@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://poetry.palemoky.com/api/:path*" },
+    { "source": "/health", "destination": "https://poetry.palemoky.com/health" }
+  ]
+}

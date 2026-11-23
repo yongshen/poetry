@@ -49,8 +49,7 @@ node server.mjs
 
 **部署到公网（永久、任何网络都能访问）**
 
-把项目推到 GitHub Pages / Vercel / Netlify 等静态托管。此时没有 `/api` 代理，
-前端会直连 `poetry.palemoky.com`，失败时自动走 `allorigins` 代理回退。
+推荐用 Vercel（自带 `/api` 反向代理，无跨域），见下文「部署到 Vercel」一节。
 
 ### 步骤 B：添加到主屏幕
 
@@ -68,6 +67,41 @@ python generate_icons.py
 会生成 `assets/icon-192.png` 与 `assets/icon-512.png`（需 Pillow：`pip install Pillow`）。
 
 > 注：`localhost` 或 HTTPS 下才会启用 Service Worker（离线缓存 + 安装提示）；局域网 `http://IP` 因非安全上下文，SW 不生效，但「添加到主屏幕」仍可用。
+
+## 部署到 Vercel
+
+本仓库已包含 `vercel.json`，配置了反向代理：`/api/**` 与 `/health` 由 Vercel 转发到 `https://poetry.palemoky.com`。
+前端请求走同源 `/api`，因此**没有跨域问题**，也不需要自建后端。
+
+### 方式一：网页端导入（最简单）
+
+1. 打开 <https://vercel.com>，用 GitHub 账号登录
+2. 点 **Add New… → Project**
+3. 在「Import Git Repository」里选中 `yongshen/poetry`，点 **Import**
+4. 配置页几乎不用改：
+   - Framework Preset 选 **Other**（纯静态站）
+   - Build Command 留空
+   - Output Directory 留空（默认根目录）
+5. 点 **Deploy**，几十秒后得到地址 `https://poetry-xxxx.vercel.app`
+
+之后每次 `git push` 到 GitHub，Vercel 会自动重新部署。
+
+### 方式二：Vercel CLI
+
+```bash
+npm i -g vercel
+vercel login
+vercel          # 首次：选择项目、确认配置
+vercel --prod   # 发布到生产环境
+```
+
+### 部署后验证
+
+- 打开 `https://你的域名.vercel.app/`，首页应正常显示「今日一诗」
+- 打开 `https://你的域名.vercel.app/api/stats`，应返回诗泉的统计数据（证明代理生效）
+- 手机浏览器打开同一地址 → 「添加到主屏幕」即可安装为 App
+
+> 说明：`server.mjs` 是本地开发用的，Vercel 上不会运行它，代理由 `vercel.json` 的 rewrites 承担。
 
 ## 数据来源
 
